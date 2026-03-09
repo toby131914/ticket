@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>搶票系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #e8192c;
+      --red-dark: #b5111e;
+      --red-glow: rgba(232, 25, 44, 0.35);
+      --bg: #0a0a0c;
+      --surface: #111115;
+      --surface2: #18181e;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f0;
+      --muted: #6b6b7a;
+      --green: #22c55e;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans TC', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 80px;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .header-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--red);
+      border: 1px solid var(--red);
+      padding: 4px 12px;
+      border-radius: 2px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .header h1 {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .header h1 span {
+      color: var(--red);
+    }
+
+    .header p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-family: var(--mono);
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 14px;
+      background: var(--red);
+      border-radius: 2px;
+    }
+
+    /* Login button */
+    .btn-login {
+      width: 100%;
+      padding: 12px 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-login:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: #1e1e26;
+    }
+
+    .btn-login svg { flex-shrink: 0; }
+
+    /* Form fields */
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-family: var(--mono);
+      letter-spacing: 0.05em;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus {
+      border-color: var(--red);
+    }
+
+    .field input::placeholder { color: #3a3a45; }
+
+    /* Time picker */
+    .time-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .time-row select {
+      flex: 1;
+      padding: 10px 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      transition: border-color 0.2s;
+    }
+
+    .time-row select:focus { border-color: var(--red); }
+
+    .time-sep {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--red);
+      flex-shrink: 0;
+    }
+
+    /* Two column grid */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Start button */
+    #startBtn {
+      width: 100%;
+      padding: 16px;
+      background: var(--red);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.05em;
+      box-shadow: 0 0 30px var(--red-glow);
+    }
+
+    #startBtn:hover:not(:disabled) {
+      background: var(--red-dark);
+      box-shadow: 0 0 50px var(--red-glow);
+      transform: translateY(-1px);
+    }
+
+    #startBtn:disabled {
+      background: #2a2a2a;
+      color: var(--muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status bar */
+    #statusBar {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 13px;
+      border: 1px solid transparent;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #statusBar.hidden { display: none !important; }
+    #statusBar.waiting  { background: rgba(234,179,8,0.08);  border-color: rgba(234,179,8,0.3);  color: #fbbf24; }
+    #statusBar.retrying { background: rgba(234,179,8,0.08);  border-color: rgba(234,179,8,0.3);  color: #fbbf24; }
+    #statusBar.filling  { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); color: #60a5fa; }
+    #statusBar.loading  { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); color: #60a5fa; }
+    #statusBar.done     { background: rgba(34,197,94,0.08);  border-color: rgba(34,197,94,0.3);  color: var(--green); }
+    #statusBar.error    { background: rgba(232,25,44,0.08);  border-color: rgba(232,25,44,0.3);  color: #f87171; }
+    #statusBar.starting { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.3); color: #a78bfa; }
+
+    .pulse {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .done .pulse, .error .pulse { animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0 18px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge">Google Form Sniper</div>
+    <h1>搶<span>票</span>系統</h1>
+    <p>自動填寫 Google 表單・精準計時搶票</p>
+  </div>
+
+  <!-- Login -->
+  <div class="card">
+    <div class="card-title">Step 1 &nbsp;登入帳號</div>
+    <button class="btn-login" onclick="doLogin()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+      開啟 Chrome 進行 Google 登入
+    </button>
+  </div>
+
+  <!-- URL -->
+  <div class="card">
+    <div class="card-title">Step 2 &nbsp;表單設定</div>
+    <div class="field">
+      <label>表單網址</label>
+      <input type="url" id="url" placeholder="https://docs.google.com/forms/..."/>
+    </div>
+    <div class="field">
+      <label>搶票時間</label>
+      <div class="time-row" id="timePickers"></div>
+    </div>
+  </div>
+
+  <!-- Personal info -->
+  <div class="card">
+    <div class="card-title">Step 3 &nbsp;填寫資訊</div>
+    <div class="grid2">
+      <div class="field">
+        <label>姓名</label>
+        <input type="text" id="name" placeholder="真實姓名"/>
+      </div>
+      <div class="field">
+        <label>暱稱／代號</label>
+        <input type="text" id="nick" placeholder="ID / 暱稱"/>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>電話</label>
+        <input type="tel" id="phone" placeholder="09xxxxxxxx"/>
+      </div>
+      <div class="field">
+        <label>電子郵件</label>
+        <input type="email" id="email" placeholder="you@gmail.com"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>指名選項（無則留空）</label>
+      <input type="text" id="key" placeholder="例如：A區、VIP、特定藝人名稱"/>
+    </div>
+  </div>
+
+  <!-- Start -->
+  <button id="startBtn" onclick="doStart()">🎯 &nbsp;啟動搶票</button>
+
+  <div id="statusBar" class="hidden">
+    <span class="pulse"></span>
+    <span id="statusText">等待中...</span>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // Build time pickers
+  const tp = document.getElementById('timePickers');
+  const units = [{id:'hour', max:24, def:'20'}, {id:'min', max:60, def:'00'}, {id:'sec', max:60, def:'00'}];
+  units.forEach((u, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'time-sep';
+      sep.textContent = ':';
+      tp.appendChild(sep);
+    }
+    const sel = document.createElement('select');
+    sel.id = u.id;
+    for (let n = 0; n < u.max; n++) {
+      const o = document.createElement('option');
+      const v = String(n).padStart(2, '0');
+      o.value = v; o.textContent = v;
+      if (v === u.def) o.selected = true;
+      sel.appendChild(o);
+    }
+    tp.appendChild(sel);
+  });
+
+  function showToast(msg, ms=2800) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), ms);
+  }
+
+  function setStatus(state, msg) {
+    const bar = document.getElementById('statusBar');
+    const txt = document.getElementById('statusText');
+    bar.className = state;
+    txt.textContent = msg;
+  }
+
+  async function doLogin() {
+    showToast('正在開啟 Chrome...');
+    try {
+      const r = await fetch('http://127.0.0.1:5000/api/login', { method: 'POST' });
+      const d = await r.json();
+      showToast(d.message, 4000);
+    } catch {
+      showToast('⚠️ 無法連線到後端，請先執行 app.py');
+    }
+  }
+
+  async function doStart() {
+    const url = document.getElementById('url').value.trim();
+    if (!url) { showToast('⚠️ 請輸入表單網址'); return; }
+
+    const h = document.getElementById('hour').value;
+    const m = document.getElementById('min').value;
+    const s = document.getElementById('sec').value;
+    const timeStr = `${h}:${m}:${s}`;
+
+    const payload = {
+      url, time: timeStr,
+      name:  document.getElementById('name').value.trim(),
+      nick:  document.getElementById('nick').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      key:   document.getElementById('key').value.trim()
+    };
+
+    document.getElementById('startBtn').disabled = true;
+    setStatus('starting', '啟動中...');
+
+    try {
+      const r = await fetch('http://127.0.0.1:5000/api/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const d = await r.json();
+      if (!d.success) {
+        showToast('❌ ' + d.message);
+        document.getElementById('startBtn').disabled = false;
+        return;
+      }
+      pollStatus();
+    } catch {
+      showToast('⚠️ 無法連線到後端，請先執行 app.py');
+      document.getElementById('startBtn').disabled = false;
+    }
+  }
+
+  let pollTimer;
+  function pollStatus() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        const r = await fetch('http://127.0.0.1:5000/api/status');
+        const d = await r.json();
+        setStatus(d.state, d.message);
+        if (d.state === 'done' || d.state === 'error') {
+          clearInterval(pollTimer);
+          document.getElementById('startBtn').disabled = false;
+          document.getElementById('startBtn').textContent = '🎯  啟動搶票';
+        }
+      } catch { /* ignore */ }
+    }, 200);
+  }
+</script>
+</body>
+</html>
