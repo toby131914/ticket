@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>搶票系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #e8192c;
+      --red-dim: rgba(232,25,44,0.15);
+      --bg: #090909;
+      --s1: #111113;
+      --s2: #17171b;
+      --border: rgba(255,255,255,0.06);
+      --text: #efefef;
+      --muted: #55555f;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --mono: 'JetBrains Mono', monospace;
+      --display: 'Bebas Neue', sans-serif;
+      --sans: 'Noto Sans TC', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 0 0 80px;
+      overflow-x: hidden;
+    }
+
+    /* Noise overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      padding: 70px 24px 50px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; left: 50%;
+      transform: translateX(-50%);
+      width: 500px; height: 300px;
+      background: radial-gradient(ellipse, rgba(232,25,44,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--red);
+      margin-bottom: 18px;
+    }
+
+    .hero-eyebrow span {
+      display: block;
+      width: 24px; height: 1px;
+      background: var(--red);
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(64px, 12vw, 100px);
+      letter-spacing: 0.05em;
+      line-height: 0.9;
+      color: #fff;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--red);
+      position: relative;
+    }
+
+    .hero-sub {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* Extension install banner */
+    #extBanner {
+      margin: 0 auto 32px;
+      max-width: 560px;
+      padding: 0 16px;
+    }
+
+    .banner {
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      border: 1px solid;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .banner.warn  { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.3); color: #fbbf24; }
+    .banner.ok    { background: rgba(34,197,94,0.07);  border-color: rgba(34,197,94,0.3);  color: var(--green); }
+    .banner-icon { font-size: 18px; flex-shrink: 0; }
+    .banner a { color: inherit; font-weight: 700; }
+
+    /* Main layout */
+    .main {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      animation: slideUp 0.5s ease both;
+    }
+
+    .card:nth-child(2) { animation-delay: 0.05s; }
+    .card:nth-child(3) { animation-delay: 0.10s; }
+    .card:nth-child(4) { animation-delay: 0.15s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .step-num {
+      width: 26px; height: 26px;
+      background: var(--red);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .card-head h2 {
+      font-size: 13px;
+      font-family: var(--mono);
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .field input:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(232,25,44,0.1);
+    }
+
+    .field input::placeholder { color: #2d2d35; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Time picker */
+    .time-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .time-wrap select {
+      flex: 1;
+      padding: 10px 4px;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+      appearance: none;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .time-wrap select:focus { border-color: var(--red); }
+
+    .colon {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--red);
+      flex-shrink: 0;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    /* Start button */
+    #startBtn {
+      width: 100%;
+      padding: 16px;
+      background: var(--red);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: var(--display);
+      font-size: 22px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 40px rgba(232,25,44,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #startBtn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    #startBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 0 60px rgba(232,25,44,0.5);
+    }
+
+    #startBtn:disabled {
+      background: #222;
+      color: var(--muted);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Status */
+    #statusBox {
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+      border: 1px solid transparent;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    #statusBox.show { display: flex; }
+    #statusBox.waiting  { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.25); color: #fbbf24; }
+    #statusBox.filling  { background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.25); color: #60a5fa; }
+    #statusBox.done     { background: rgba(34,197,94,0.07);  border-color: rgba(34,197,94,0.25);  color: var(--green); }
+    #statusBox.error    { background: rgba(232,25,44,0.07);  border-color: rgba(232,25,44,0.25);  color: #f87171; }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      animation: blink 1.1s infinite;
+    }
+    .done .dot, .error .dot { animation: none; }
+
+    @keyframes blink {
+      0%,100% { opacity:1; } 50% { opacity:0.3; }
+    }
+
+    /* Stop button */
+    #stopBtn {
+      display: none;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    #stopBtn:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+    #stopBtn.show { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-eyebrow"><span></span>GOOGLE FORM SNIPER<span></span></div>
+  <h1>搶<em>票</em><br>系統</h1>
+  <p class="hero-sub">自動填寫 · 精準計時 · 秒速搶票</p>
+</div>
+
+<div id="extBanner"></div>
+
+<div class="main">
+
+  <!-- URL + Time -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num">01</div>
+      <h2>表單設定</h2>
+    </div>
+    <div class="field">
+      <label>表單網址</label>
+      <input type="url" id="url" placeholder="https://docs.google.com/forms/d/..."/>
+    </div>
+    <div class="field">
+      <label>搶票時間</label>
+      <div class="time-wrap" id="timePicker"></div>
+    </div>
+  </div>
+
+  <!-- Personal info -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num">02</div>
+      <h2>填寫資訊</h2>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>姓名</label>
+        <input type="text" id="name" placeholder="真實姓名"/>
+      </div>
+      <div class="field">
+        <label>暱稱／代號</label>
+        <input type="text" id="nick" placeholder="ID"/>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>電話</label>
+        <input type="tel" id="phone" placeholder="09xxxxxxxx"/>
+      </div>
+      <div class="field">
+        <label>電子郵件</label>
+        <input type="email" id="email" placeholder="you@gmail.com"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>指名選項（無則留空）</label>
+      <input type="text" id="key" placeholder="例：A區 / VIP / 特定名稱"/>
+    </div>
+  </div>
+
+  <!-- Launch -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num">03</div>
+      <h2>啟動</h2>
+    </div>
+    <button id="startBtn" onclick="doStart()">🎯 啟動搶票</button>
+    <button id="stopBtn" onclick="doStop()">⛔ 取消</button>
+    <div id="statusBox">
+      <span class="dot"></span>
+      <span id="statusText"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Extension ID — 安裝後請填入正確的 ID
+  // 開發中先用 undefined 讓系統自動偵測
+  const EXT_ID = undefined; // 例如: "abcdefghijklmnopabcdefghijklmnop"
+
+  // ── Build time picker ──
+  const tp = document.getElementById('timePicker');
+  [['hour',24,'20'],['min',60,'00'],['sec',60,'00']].forEach(([id,max,def], i) => {
+    if (i > 0) { const c = document.createElement('span'); c.className='colon'; c.textContent=':'; tp.appendChild(c); }
+    const s = document.createElement('select'); s.id = id;
+    for (let n=0; n<max; n++) {
+      const o = document.createElement('option');
+      o.value = o.textContent = String(n).padStart(2,'0');
+      if (o.value === def) o.selected = true;
+      s.appendChild(o);
+    }
+    tp.appendChild(s);
+  });
+
+  // ── Check extension ──
+  function checkExtension() {
+    const banner = document.getElementById('extBanner');
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      banner.innerHTML = `<div class="banner warn"><span class="banner-icon">⚠️</span><span>請使用 Chrome 瀏覽器開啟此頁面</span></div>`;
+      return;
+    }
+    // 嘗試偵測擴充套件
+    try {
+      chrome.runtime.sendMessage(EXT_ID, { action: 'ping' }, (res) => {
+        if (chrome.runtime.lastError || !res) {
+          banner.innerHTML = `<div class="banner warn"><span class="banner-icon">🧩</span><span>尚未安裝擴充套件，請先 <a href="extension_install.html">安裝搶票助手</a></span></div>`;
+        } else {
+          banner.innerHTML = `<div class="banner ok"><span class="banner-icon">✅</span><span>搶票助手已連線 (v${res.version})</span></div>`;
+          pollStatus();
+        }
+      });
+    } catch(e) {
+      banner.innerHTML = `<div class="banner warn"><span class="banner-icon">🧩</span><span>請先安裝擴充套件後重新整理頁面</span></div>`;
+    }
+  }
+
+  function sendToExt(msg, cb) {
+    chrome.runtime.sendMessage(EXT_ID, msg, cb);
+  }
+
+  function doStart() {
+    const url = document.getElementById('url').value.trim();
+    if (!url) { alert('請輸入表單網址'); return; }
+
+    const h = document.getElementById('hour').value;
+    const m = document.getElementById('min').value;
+    const s = document.getElementById('sec').value;
+
+    const profile = {
+      name:  document.getElementById('name').value.trim(),
+      nick:  document.getElementById('nick').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      key:   document.getElementById('key').value.trim()
+    };
+
+    sendToExt({ action: 'startSniper', url, targetTime: `${h}:${m}:${s}`, profile }, (res) => {
+      if (chrome.runtime.lastError || !res?.success) {
+        alert('無法連線到擴充套件，請確認已安裝並重新整理');
+        return;
+      }
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').classList.add('show');
+      setStatus('waiting', `等待中，目標時間 ${h}:${m}:${s}`);
+      pollStatus();
+    });
+  }
+
+  function doStop() {
+    sendToExt({ action: 'stop' }, () => {
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').classList.remove('show');
+      setStatus('', '');
+      document.getElementById('statusBox').classList.remove('show');
+      clearInterval(pollTimer);
+    });
+  }
+
+  function setStatus(state, msg) {
+    const box = document.getElementById('statusBox');
+    const txt = document.getElementById('statusText');
+    if (!state) return;
+    box.className = 'show ' + state;
+    txt.textContent = msg;
+    if (state === 'done' || state === 'error') {
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').classList.remove('show');
+      clearInterval(pollTimer);
+    }
+  }
+
+  let pollTimer;
+  function pollStatus() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(() => {
+      sendToExt({ action: 'getStatus' }, (res) => {
+        if (!res) return;
+        setStatus(res.status, res.message || '');
+      });
+    }, 500);
+  }
+
+  checkExtension();
+</script>
+</body>
+</html>

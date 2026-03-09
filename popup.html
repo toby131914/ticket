@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  body { width: 220px; padding: 14px; font-family: 'Noto Sans TC', sans-serif; background: #111; color: #eee; margin: 0; }
+  h3 { font-size: 15px; margin: 0 0 10px; color: #e8192c; }
+  p { font-size: 12px; color: #aaa; margin: 0 0 10px; line-height: 1.5; }
+  #status { font-size: 12px; padding: 8px; background: #1a1a1a; border-radius: 6px; color: #60a5fa; }
+  a { color: #e8192c; font-size: 12px; }
+</style>
+</head>
+<body>
+<h3>🎯 搶票助手</h3>
+<p>請至設定網頁進行操作</p>
+<div id="status">讀取狀態中...</div>
+<script>
+  chrome.runtime.sendMessage({ action: 'getStatus' }, (res) => {
+    const el = document.getElementById('status');
+    if (res) el.textContent = res.message || '閒置中';
+    else el.textContent = '閒置中';
+  });
+</script>
+</body>
+</html>

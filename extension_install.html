@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>安裝搶票助手擴充套件</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #e8192c; --bg: #090909; --s1: #111113; --s2: #17171b;
+      --border: rgba(255,255,255,0.06); --text: #efefef; --muted: #55555f;
+      --mono: 'JetBrains Mono', monospace; --display: 'Bebas Neue', sans-serif;
+      --sans: 'Noto Sans TC', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 60px 16px 80px; }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    h1 { font-family: var(--display); font-size: 48px; color: #fff; margin-bottom: 8px; }
+    h1 em { font-style: normal; color: var(--red); }
+    .sub { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
+    .step { display: flex; gap: 16px; margin-bottom: 28px; align-items: flex-start; }
+    .num { width: 36px; height: 36px; background: var(--red); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 700; flex-shrink: 0; font-size: 14px; }
+    .step-body h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .step-body p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .step-body code { font-family: var(--mono); font-size: 12px; background: var(--s2); padding: 2px 6px; border-radius: 4px; color: #a5f3fc; }
+    .note { margin-top: 32px; padding: 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+    a { color: var(--red); }
+    .back { display: inline-block; margin-top: 32px; font-size: 13px; color: var(--muted); text-decoration: none; }
+    .back:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>安裝<em>擴充</em>套件</h1>
+  <p class="sub">只需安裝一次，之後直接使用搶票頁面即可</p>
+
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <h3>下載擴充套件資料夾</h3>
+      <p>從 GitHub 下載整個 repository，找到 <code>extension/</code> 資料夾並記住位置。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <h3>開啟 Chrome 擴充功能頁面</h3>
+      <p>在 Chrome 網址列輸入：<code>chrome://extensions</code>，按 Enter。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <h3>開啟開發人員模式</h3>
+      <p>右上角切換 <strong>開發人員模式</strong> 為開啟。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">4</div>
+    <div class="step-body">
+      <h3>載入未封裝項目</h3>
+      <p>點擊左上角 <strong>載入未封裝項目</strong>，選擇剛才的 <code>extension/</code> 資料夾。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">5</div>
+    <div class="step-body">
+      <h3>複製擴充套件 ID</h3>
+      <p>安裝後在擴充功能頁面找到「搶票助手」，複製下方的 ID（一串英文字），填入 <code>index.html</code> 的 <code>EXT_ID</code> 變數中，再 push 到 GitHub。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    ⚠️ 每台電腦的擴充套件 ID 都不同。如果要讓多人使用，建議將擴充套件發布到 Chrome Web Store，屆時 ID 會固定，不需要各自修改。
+  </div>
+
+  <a href="index.html" class="back">← 返回搶票頁面</a>
+</div>
+</body>
+</html>
