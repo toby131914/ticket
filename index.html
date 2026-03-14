@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>搶票系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #e8192c;
+      --red-dark: #b5111e;
+      --red-glow: rgba(232,25,44,0.25);
+      --bg: #080809;
+      --s1: #0f0f11;
+      --s2: #161619;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f0;
+      --muted: #52525c;
+      --green: #22c55e;
+      --yellow: #fbbf24;
+      --mono: 'JetBrains Mono', monospace;
+      --display: 'Bebas Neue', cursive;
+      --sans: 'Noto Sans TC', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* Scanline effect */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 52px 20px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 320px; height: 160px;
+      background: radial-gradient(ellipse, rgba(232,25,44,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: var(--red);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .hero-tag::before, .hero-tag::after {
+      content: '';
+      display: block;
+      width: 20px; height: 1px;
+      background: var(--red);
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(60px, 18vw, 88px);
+      letter-spacing: 0.04em;
+      line-height: 0.88;
+      color: #fff;
+    }
+
+    .hero h1 b { color: var(--red); font-weight: 400; }
+
+    .hero-desc {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── HOW TO section ── */
+    .how {
+      margin: 28px 16px 0;
+      padding: 16px 18px;
+      background: rgba(232,25,44,0.06);
+      border: 1px solid rgba(232,25,44,0.2);
+      border-radius: 12px;
+      font-size: 12px;
+      color: #f87171;
+      line-height: 1.8;
+    }
+
+    .how strong { color: var(--red); font-size: 11px; letter-spacing: 0.1em; font-family: var(--mono); }
+
+    /* ── Main ── */
+    .main {
+      padding: 20px 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      animation: up 0.5s ease both;
+    }
+
+    .card:nth-child(2) { animation-delay: 0.05s; }
+    .card:nth-child(3) { animation-delay: 0.10s; }
+    .card:nth-child(4) { animation-delay: 0.15s; }
+
+    @keyframes up {
+      from { opacity:0; transform:translateY(14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      width: 24px; height: 24px;
+      background: var(--red);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .card-head h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* ── Fields ── */
+    .field { margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.07em;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="email"],
+    input[type="tel"],
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(232,25,44,0.08);
+    }
+
+    input::placeholder, textarea::placeholder { color: #2a2a32; }
+
+    textarea { resize: vertical; min-height: 72px; font-size: 13px; line-height: 1.6; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── Time ── */
+    .time-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .time-row select {
+      flex: 1;
+      padding: 11px 4px;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .time-row select:focus { border-color: var(--red); }
+
+    .colon {
+      font-family: var(--mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--red);
+      flex-shrink: 0;
+    }
+
+    /* ── Prefill preview ── */
+    #prefillPreview {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--s2);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    #prefillPreview.show { display: block; }
+    #prefillPreview span { color: #60a5fa; }
+
+    /* ── Countdown ── */
+    #countdown {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    #countdown.show { display: block; }
+
+    .cd-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .cd-time {
+      font-family: var(--display);
+      font-size: 56px;
+      letter-spacing: 0.05em;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .cd-time.urgent { color: var(--red); animation: flash 0.5s infinite; }
+
+    @keyframes flash { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    .cd-target {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Buttons ── */
+    #startBtn {
+      width: 100%;
+      padding: 17px;
+      background: var(--red);
+      border: none;
+      border-radius: 11px;
+      color: #fff;
+      font-family: var(--display);
+      font-size: 22px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 30px var(--red-glow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #startBtn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      transition: left 0.4s;
+    }
+
+    #startBtn:hover::before { left: 150%; }
+    #startBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 40px var(--red-glow); }
+    #startBtn:disabled { background: #1e1e22; color: var(--muted); box-shadow: none; cursor: not-allowed; }
+
+    #cancelBtn {
+      display: none;
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    #cancelBtn.show { display: block; }
+    #cancelBtn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    /* ── Status ── */
+    #statusBox {
+      display: none;
+      margin-top: 12px;
+      padding: 13px 16px;
+      border-radius: 9px;
+      font-family: var(--mono);
+      font-size: 12px;
+      border: 1px solid transparent;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #statusBox.show { display: flex; }
+    #statusBox.waiting { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.25); color: var(--yellow); }
+    #statusBox.done    { background: rgba(34,197,94,0.07);  border-color: rgba(34,197,94,0.25);  color: var(--green); }
+    #statusBox.error   { background: rgba(232,25,44,0.07);  border-color: rgba(232,25,44,0.25);  color: #f87171; }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      animation: blink 1s infinite;
+    }
+    .done .dot, .error .dot { animation: none; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ── Info box ── */
+    .info {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.7;
+      padding: 0 2px;
+    }
+
+    .info a { color: #60a5fa; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">Mobile &amp; Desktop</div>
+  <h1>搶<b>票</b><br>系統</h1>
+  <p class="hero-desc">計時跳轉 · 自動預填 · 手機電腦通用</p>
+</div>
+
+<div class="how">
+  <strong>運作方式</strong><br>
+  時間到自動跳轉到 Google 表單，並預先填入你的資料。<br>
+  最後一步確認後按送出即完成。不需要安裝任何東西。
+</div>
+
+<div class="main">
+
+  <!-- 表單設定 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="badge">01</div>
+      <h2>表單設定</h2>
+    </div>
+
+    <div class="field">
+      <label>Google 表單網址</label>
+      <input type="url" id="url" placeholder="https://docs.google.com/forms/d/..." oninput="updatePreview()"/>
+    </div>
+
+    <div class="field">
+      <label>搶票時間</label>
+      <div class="time-row" id="timePicker"></div>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>預填欄位 ID（選填，可留空）</label>
+      <textarea id="fieldMap" placeholder="格式：欄位ID=資料類型，每行一個&#10;例如：&#10;entry.123456789=name&#10;entry.987654321=phone&#10;entry.111222333=email" oninput="updatePreview()"></textarea>
+      <p class="info">
+        欄位 ID 需從表單原始碼取得。<br>
+        資料類型可填：<code style="color:#a5f3fc;font-family:var(--mono);font-size:11px">name / phone / email / nick</code>
+      </p>
+    </div>
+
+    <div id="prefillPreview"></div>
+  </div>
+
+  <!-- 個人資料 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="badge">02</div>
+      <h2>個人資料</h2>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>姓名</label>
+        <input type="text" id="name" placeholder="真實姓名" oninput="updatePreview()"/>
+      </div>
+      <div class="field">
+        <label>暱稱</label>
+        <input type="text" id="nick" placeholder="ID" oninput="updatePreview()"/>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>電話</label>
+        <input type="tel" id="phone" placeholder="09xxxxxxxx" oninput="updatePreview()"/>
+      </div>
+      <div class="field">
+        <label>電子郵件</label>
+        <input type="email" id="email" placeholder="you@gmail.com" oninput="updatePreview()"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- 啟動 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="badge">03</div>
+      <h2>啟動</h2>
+    </div>
+    <button id="startBtn" onclick="doStart()">🎯 設定完成，啟動搶票</button>
+    <button id="cancelBtn" onclick="doCancel()">取消</button>
+    <div id="statusBox">
+      <span class="dot"></span>
+      <span id="statusText"></span>
+    </div>
+  </div>
+
+  <!-- 倒數 -->
+  <div id="countdown">
+    <div class="cd-label">距離搶票時間</div>
+    <div class="cd-time" id="cdTime">--:--:--</div>
+    <div class="cd-target" id="cdTarget"></div>
+  </div>
+
+</div>
+
+<script>
+  // ── Build time picker ──
+  const tp = document.getElementById('timePicker');
+  [['hour',24,'20'],['min',60,'00'],['sec',60,'00']].forEach(([id,max,def],i) => {
+    if (i>0) { const c=document.createElement('span'); c.className='colon'; c.textContent=':'; tp.appendChild(c); }
+    const s = document.createElement('select');
+    s.id = id;
+    s.addEventListener('change', updatePreview);
+    for (let n=0; n<max; n++) {
+      const o = document.createElement('option');
+      o.value = o.textContent = String(n).padStart(2,'0');
+      if (o.value===def) o.selected=true;
+      s.appendChild(o);
+    }
+    tp.appendChild(s);
+  });
+
+  // ── Build prefill URL ──
+  function buildPrefillUrl() {
+    const base = document.getElementById('url').value.trim();
+    if (!base || !base.includes('docs.google.com/forms')) return null;
+
+    const profile = {
+      name:  document.getElementById('name').value.trim(),
+      nick:  document.getElementById('nick').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      email: document.getElementById('email').value.trim()
+    };
+
+    const mapRaw = document.getElementById('fieldMap').value.trim();
+    const params = new URLSearchParams();
+
+    if (mapRaw) {
+      mapRaw.split('\n').forEach(line => {
+        const [key, type] = line.trim().split('=');
+        if (key && type && profile[type.trim()]) {
+          params.append(key.trim(), profile[type.trim()]);
+        }
+      });
+    }
+
+    // 把 /edit 或 /viewform 統一成 /viewform
+    const cleanBase = base.replace(/\/(edit|viewform|formResponse).*$/, '') + '/viewform';
+    const qs = params.toString();
+    return qs ? `${cleanBase}?${qs}&usp=pp_url` : cleanBase;
+  }
+
+  function updatePreview() {
+    const url = buildPrefillUrl();
+    const preview = document.getElementById('prefillPreview');
+    if (!url) { preview.classList.remove('show'); return; }
+    preview.classList.add('show');
+    const short = url.length > 80 ? url.slice(0,80) + '...' : url;
+    preview.innerHTML = `<span style="color:var(--muted);display:block;margin-bottom:4px;font-size:10px;">預填網址預覽</span><span>${short}</span>`;
+  }
+
+  // ── Countdown ──
+  let timer = null;
+
+  function doStart() {
+    const url = document.getElementById('url').value.trim();
+    if (!url) { alert('請輸入表單網址'); return; }
+
+    const h = document.getElementById('hour').value;
+    const m = document.getElementById('min').value;
+    const s = document.getElementById('sec').value;
+    const targetStr = `${h}:${m}:${s}`;
+
+    const prefillUrl = buildPrefillUrl() || url.replace(/\/(edit|viewform|formResponse).*$/, '') + '/viewform';
+
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('cancelBtn').classList.add('show');
+    document.getElementById('countdown').classList.add('show');
+    document.getElementById('cdTarget').textContent = `目標時間 ${targetStr}`;
+
+    setStatus('waiting', `等待中，目標 ${targetStr}`);
+
+    // Save to sessionStorage so page reload keeps it
+    sessionStorage.setItem('sniperUrl', prefillUrl);
+    sessionStorage.setItem('sniperTarget', targetStr);
+
+    startCountdown(targetStr, prefillUrl);
+  }
+
+  function startCountdown(targetStr, prefillUrl) {
+    clearInterval(timer);
+    timer = setInterval(() => {
+      const now = new Date();
+      const [th, tm, ts] = targetStr.split(':').map(Number);
+      const target = new Date(now);
+      target.setHours(th, tm, ts, 0);
+      if (target <= now) target.setDate(target.getDate() + 1);
+
+      const diff = target - now;
+      const hh = Math.floor(diff / 3600000);
+      const mm = Math.floor((diff % 3600000) / 60000);
+      const ss = Math.floor((diff % 60000) / 1000);
+
+      const cdEl = document.getElementById('cdTime');
+      cdEl.textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+      cdEl.className = 'cd-time' + (diff < 10000 ? ' urgent' : '');
+
+      const nowStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+      if (nowStr >= targetStr) {
+        clearInterval(timer);
+        launch(prefillUrl);
+      }
+    }, 200);
+  }
+
+  function launch(prefillUrl) {
+    setStatus('done', '✅ 時間到！正在跳轉表單...');
+    document.getElementById('cdTime').textContent = '00:00:00';
+    setTimeout(() => {
+      window.location.href = prefillUrl;
+    }, 300);
+  }
+
+  function doCancel() {
+    clearInterval(timer);
+    sessionStorage.removeItem('sniperUrl');
+    sessionStorage.removeItem('sniperTarget');
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('cancelBtn').classList.remove('show');
+    document.getElementById('countdown').classList.remove('show');
+    document.getElementById('statusBox').classList.remove('show');
+    document.getElementById('cdTime').textContent = '--:--:--';
+  }
+
+  function setStatus(state, msg) {
+    const box = document.getElementById('statusBox');
+    box.className = 'show ' + state;
+    document.getElementById('statusText').textContent = msg;
+  }
+
+  // ── Restore session on reload ──
+  window.addEventListener('load', () => {
+    const savedUrl = sessionStorage.getItem('sniperUrl');
+    const savedTarget = sessionStorage.getItem('sniperTarget');
+    if (savedUrl && savedTarget) {
+      const now = new Date();
+      const nowStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      if (nowStr < savedTarget) {
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('cancelBtn').classList.add('show');
+        document.getElementById('countdown').classList.add('show');
+        document.getElementById('cdTarget').textContent = `目標時間 ${savedTarget}`;
+        setStatus('waiting', `等待中，目標 ${savedTarget}`);
+        startCountdown(savedTarget, savedUrl);
+      } else {
+        sessionStorage.clear();
+      }
+    }
+  });
+</script>
+</body>
+</html>
