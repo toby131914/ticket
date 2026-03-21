@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>搶票系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #e8192c; --red-dark: #b5111e; --red-glow: rgba(232,25,44,0.22);
+      --bg: #080809; --s1: #0f0f11; --s2: #161619;
+      --border: rgba(255,255,255,0.07); --text: #f0f0f0; --muted: #52525c;
+      --green: #22c55e; --yellow: #fbbf24; --blue: #60a5fa;
+      --mono: 'JetBrains Mono', monospace;
+      --display: 'Bebas Neue', cursive;
+      --sans: 'Noto Sans TC', sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: block; }
+
+    /* LOGIN */
+    #loginPage {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px; position: relative; overflow: hidden;
+    }
+    #loginPage::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 25% 60%, rgba(232,25,44,0.1) 0%, transparent 55%),
+                  radial-gradient(ellipse at 75% 20%, rgba(232,25,44,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    #loginPage::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 44px 44px; pointer-events: none;
+    }
+    .login-box {
+      position: relative; z-index: 1; width: 100%; max-width: 400px;
+      background: var(--s1); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px 28px;
+      animation: fadeUp 0.5s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-icon { width:58px; height:58px; background:var(--red); border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:28px; box-shadow:0 8px 32px var(--red-glow); }
+    .login-logo h1 { font-family:var(--display); font-size:34px; letter-spacing:0.05em; color:#fff; }
+    .login-logo p { font-size:11px; color:var(--muted); margin-top:4px; font-family:var(--mono); letter-spacing:0.1em; }
+    .login-sep { height:1px; background:var(--border); margin:0 0 22px; }
+    .lf { margin-bottom:13px; }
+    .lf label { display:block; font-size:11px; font-family:var(--mono); color:var(--muted); letter-spacing:0.1em; margin-bottom:6px; }
+    .lf input { width:100%; padding:12px 14px; background:var(--s2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--sans); font-size:15px; outline:none; transition:border-color 0.15s,box-shadow 0.15s; -webkit-appearance:none; }
+    .lf input:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(232,25,44,0.08); }
+    .lf input::placeholder { color:#252530; }
+    .login-btn { width:100%; margin-top:6px; padding:14px; background:var(--red); border:none; border-radius:10px; color:#fff; font-family:var(--display); font-size:20px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 24px var(--red-glow); }
+    .login-btn:hover { transform:translateY(-1px); box-shadow:0 8px 32px var(--red-glow); }
+    .login-err { display:none; margin-top:10px; padding:10px 14px; background:rgba(232,25,44,0.08); border:1px solid rgba(232,25,44,0.3); border-radius:8px; font-size:12px; color:#f87171; text-align:center; }
+    .login-err.show { display:block; }
+    .login-note { margin-top:16px; font-size:11px; color:var(--muted); text-align:center; line-height:1.7; font-family:var(--mono); }
+
+    /* MAIN */
+    #mainPage { padding-bottom: 60px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:13px 18px; background:var(--s1); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+    .topbar-left { display:flex; align-items:center; gap:10px; }
+    .topbar-title { font-family:var(--display); font-size:22px; letter-spacing:0.05em; color:#fff; }
+    .topbar-title span { color:var(--red); }
+    .mode-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-family:var(--mono); font-size:10px; letter-spacing:0.08em; border:1px solid; }
+    .mode-badge.mobile  { background:rgba(96,165,250,0.08);  border-color:rgba(96,165,250,0.3);  color:var(--blue); }
+    .mode-badge.desktop { background:rgba(34,197,94,0.08);   border-color:rgba(34,197,94,0.3);   color:var(--green); }
+    .user-pill { display:flex; align-items:center; gap:7px; padding:5px 12px; background:var(--s2); border:1px solid var(--border); border-radius:20px; font-size:12px; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+    .user-pill:hover { border-color:rgba(255,255,255,0.15); color:var(--text); }
+    .user-av { width:22px; height:22px; background:var(--red); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+
+    .hero { text-align:center; padding:36px 20px 24px; position:relative; overflow:hidden; }
+    .hero::after { content:''; position:absolute; bottom:-30px; left:50%; transform:translateX(-50%); width:260px; height:100px; background:radial-gradient(ellipse, rgba(232,25,44,0.14) 0%, transparent 70%); pointer-events:none; }
+    .hero-tag { display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; letter-spacing:0.22em; color:var(--red); margin-bottom:12px; text-transform:uppercase; }
+    .hero-tag::before, .hero-tag::after { content:''; display:block; width:18px; height:1px; background:var(--red); }
+    .hero h2 { font-family:var(--display); font-size:clamp(52px,14vw,76px); letter-spacing:0.04em; line-height:0.88; color:#fff; }
+    .hero h2 b { color:var(--red); font-weight:400; }
+    .hero p { margin-top:10px; font-size:12px; color:var(--muted); letter-spacing:0.07em; }
+
+    .cards { max-width:580px; margin:0 auto; padding:18px 16px 0; display:flex; flex-direction:column; gap:13px; }
+    .card { background:var(--s1); border:1px solid var(--border); border-radius:14px; padding:20px; animation:up 0.45s ease both; }
+    .card:nth-child(1){animation-delay:0.00s} .card:nth-child(2){animation-delay:0.06s} .card:nth-child(3){animation-delay:0.12s} .card:nth-child(4){animation-delay:0.18s}
+    @keyframes up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .card-head { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .badge { width:24px; height:24px; background:var(--red); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:11px; font-weight:700; flex-shrink:0; }
+    .card-head h3 { font-family:var(--mono); font-size:11px; letter-spacing:0.15em; color:var(--muted); text-transform:uppercase; }
+
+    .field { margin-bottom:12px; }
+    .field:last-child { margin-bottom:0; }
+    label { display:block; font-size:11px; font-family:var(--mono); color:var(--muted); letter-spacing:0.07em; margin-bottom:6px; }
+    input[type="text"],input[type="url"],input[type="email"],input[type="tel"],textarea { width:100%; padding:11px 13px; background:var(--s2); border:1px solid var(--border); border-radius:9px; color:var(--text); font-family:var(--sans); font-size:14px; outline:none; transition:border-color 0.15s,box-shadow 0.15s; -webkit-appearance:none; }
+    input:focus,textarea:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(232,25,44,0.08); }
+    input::placeholder,textarea::placeholder { color:#252530; }
+    textarea { resize:vertical; min-height:78px; font-size:13px; line-height:1.65; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media(max-width:400px){.grid2{grid-template-columns:1fr}}
+
+    .time-row { display:flex; align-items:center; gap:5px; }
+    .time-row select { flex:1; padding:11px 4px; background:var(--s2); border:1px solid var(--border); border-radius:9px; color:var(--text); font-family:var(--mono); font-size:20px; font-weight:700; text-align:center; appearance:none; -webkit-appearance:none; outline:none; cursor:pointer; }
+    .time-row select:focus { border-color:var(--red); }
+    .colon { font-family:var(--mono); font-size:22px; font-weight:700; color:var(--red); flex-shrink:0; }
+
+    .parse-box { display:none; margin-top:10px; padding:11px 13px; background:var(--s2); border-radius:8px; font-family:var(--mono); font-size:11px; line-height:1.9; }
+    .parse-box.show { display:block; }
+    .ok{color:var(--green)} .warn{color:#f87171} .dim{color:var(--muted)} .hi{color:var(--blue)}
+
+    #prefillPreview { display:none; margin-top:10px; padding:10px 12px; background:var(--s2); border-radius:8px; font-family:var(--mono); font-size:10px; color:var(--muted); word-break:break-all; line-height:1.6; }
+    #prefillPreview.show { display:block; }
+
+    .hint { margin-top:8px; padding:10px 12px; background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.15); border-radius:8px; font-size:12px; color:#93c5fd; line-height:1.75; }
+    .hint strong { color:var(--blue); }
+
+    .wake-warn { display:none; margin-bottom:12px; padding:10px 12px; background:rgba(251,191,36,0.07); border:1px solid rgba(251,191,36,0.2); border-radius:8px; font-size:11px; color:var(--yellow); line-height:1.7; font-family:var(--mono); }
+
+    #countdown { display:none; text-align:center; padding:22px 20px; background:var(--s1); border:1px solid var(--border); border-radius:14px; }
+    #countdown.show { display:block; }
+    .cd-label { font-family:var(--mono); font-size:10px; letter-spacing:0.2em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+    .cd-time { font-family:var(--display); font-size:60px; letter-spacing:0.05em; color:#fff; line-height:1; }
+    .cd-time.urgent { color:var(--red); animation:flash 0.5s infinite; }
+    @keyframes flash{0%,100%{opacity:1}50%{opacity:0.35}}
+    .cd-sub { margin-top:8px; font-family:var(--mono); font-size:11px; color:var(--muted); }
+
+    #startBtn { width:100%; padding:16px; background:var(--red); border:none; border-radius:10px; color:#fff; font-family:var(--display); font-size:22px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 28px var(--red-glow); }
+    #startBtn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 40px var(--red-glow); }
+    #startBtn:disabled { background:#1e1e22; color:var(--muted); box-shadow:none; cursor:not-allowed; }
+    #cancelBtn { display:none; width:100%; margin-top:10px; padding:11px; background:transparent; border:1px solid var(--border); border-radius:9px; color:var(--muted); font-family:var(--sans); font-size:13px; cursor:pointer; transition:all 0.15s; }
+    #cancelBtn.show { display:block; }
+    #cancelBtn:hover { color:var(--text); border-color:rgba(255,255,255,0.15); }
+
+    #statusBox { display:none; margin-top:11px; padding:12px 15px; border-radius:9px; font-family:var(--mono); font-size:12px; border:1px solid transparent; align-items:center; gap:9px; }
+    #statusBox.show { display:flex; }
+    #statusBox.waiting { background:rgba(251,191,36,0.07); border-color:rgba(251,191,36,0.25); color:var(--yellow); }
+    #statusBox.done    { background:rgba(34,197,94,0.07);  border-color:rgba(34,197,94,0.25);  color:var(--green); }
+    #statusBox.error   { background:rgba(232,25,44,0.07);  border-color:rgba(232,25,44,0.25);  color:#f87171; }
+    .dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; animation:blink 1s infinite; }
+    .done .dot,.error .dot { animation:none; }
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page active">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-icon">🎯</div>
+      <h1>搶票系統</h1>
+      <p>TICKET SNIPER</p>
+    </div>
+    <div class="login-sep"></div>
+    <div class="lf">
+      <label>GOOGLE 帳號（EMAIL）</label>
+      <input type="email" id="li-email" placeholder="yourname@gmail.com" autocomplete="email"/>
+    </div>
+    <div class="lf">
+      <label>姓名</label>
+      <input type="text" id="li-name" placeholder="真實姓名"/>
+    </div>
+    <div class="lf">
+      <label>電話</label>
+      <input type="tel" id="li-phone" placeholder="09xxxxxxxx"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()">進入搶票系統</button>
+    <div class="login-err" id="li-err"></div>
+    <p class="login-note">資料僅用於自動填入表單，不會上傳至任何伺服器</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainPage" class="page">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">搶<span>票</span></div>
+      <div class="mode-badge mobile" id="modeBadge">📱 手機模式</div>
+    </div>
+    <div class="user-pill" onclick="doLogout()">
+      <div class="user-av" id="userAv">?</div>
+      <span id="userEmail">未登入</span>
+      <span style="font-size:10px;opacity:0.4">登出</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-tag">Mobile · GitHub Pages</div>
+    <h2>搶<b>票</b><br>系統</h2>
+    <p>計時跳轉 · 自動預填 · 手機電腦通用</p>
+  </div>
+
+  <div class="cards">
+
+    <!-- 01 表單設定 -->
+    <div class="card">
+      <div class="card-head"><div class="badge">01</div><h3>表單設定</h3></div>
+      <div class="field">
+        <label>表單網址（直接貼網址，不需預填也可用）</label>
+        <input type="url" id="url" placeholder="https://docs.google.com/forms/d/..." oninput="updatePreview()"/>
+      </div>
+      <div class="field">
+        <label>預填連結（選填，可自動解析 entry ID）</label>
+        <textarea id="prefillRaw" placeholder="貼上從 Google 表單「取得預填連結」複製的網址&#10;https://docs.google.com/forms/d/.../viewform?entry.123=測試&entry.456=0900" oninput="parsePrefill()"></textarea>
+        <div class="hint">
+          📋 <strong>取得方式：</strong>開啟表單 → 右上角 ⋮ →「取得預填連結」→ 各欄位隨便填資料 → 複製連結貼上
+        </div>
+      </div>
+      <div class="parse-box" id="parseBox"></div>
+      <div class="field" style="margin-top:14px;">
+        <label>搶票時間</label>
+        <div class="time-row" id="timePicker"></div>
+      </div>
+      <div id="prefillPreview"></div>
+    </div>
+
+    <!-- 02 個人資料 -->
+    <div class="card">
+      <div class="card-head"><div class="badge">02</div><h3>個人資料</h3></div>
+      <div class="grid2">
+        <div class="field"><label>姓名</label><input type="text" id="name" oninput="updatePreview()"/></div>
+        <div class="field"><label>暱稱（選填）</label><input type="text" id="nick" placeholder="ID" oninput="updatePreview()"/></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>電話</label><input type="tel" id="phone" oninput="updatePreview()"/></div>
+        <div class="field"><label>電子郵件</label><input type="email" id="email" oninput="updatePreview()"/></div>
+      </div>
+    </div>
+
+    <!-- 03 啟動 -->
+    <div class="card">
+      <div class="card-head"><div class="badge">03</div><h3>啟動</h3></div>
+      <div class="wake-warn" id="wakeWarn">⚠️ 手機搶票中請勿切換 App 或鎖定螢幕，建議關閉自動鎖定</div>
+      <button id="startBtn" onclick="doStart()">🎯 設定完成，啟動搶票</button>
+      <button id="cancelBtn" onclick="doCancel()">取消</button>
+      <div id="statusBox"><span class="dot"></span><span id="statusText"></span></div>
+    </div>
+
+    <!-- Countdown -->
+    <div id="countdown">
+      <div class="cd-label">距離搶票時間</div>
+      <div class="cd-time" id="cdTime">--:--:--</div>
+      <div class="cd-sub" id="cdSub"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+// ── LOGIN ──
+function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const name  = document.getElementById('li-name').value.trim();
+  const phone = document.getElementById('li-phone').value.trim();
+  const err   = document.getElementById('li-err');
+  if (!email||!name||!phone) { err.textContent='請填寫所有欄位'; err.classList.add('show'); return; }
+  if (!email.includes('@')) { err.textContent='請輸入正確的 Email 格式'; err.classList.add('show'); return; }
+  err.classList.remove('show');
+  const user = { email, name, phone };
+  sessionStorage.setItem('user', JSON.stringify(user));
+  applyUser(user);
+  showPage('mainPage');
+}
+
+function applyUser(user) {
+  document.getElementById('userAv').textContent    = user.email[0].toUpperCase();
+  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('name').value  = user.name;
+  document.getElementById('phone').value = user.phone;
+  document.getElementById('email').value = user.email;
+  updatePreview();
+}
+
+function doLogout() {
+  if (!confirm('確定要登出？')) return;
+  sessionStorage.clear(); showPage('loginPage');
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'mainPage') {
+    const badge = document.getElementById('modeBadge');
+    if (isMobile) {
+      badge.textContent='📱 手機模式'; badge.className='mode-badge mobile';
+      document.getElementById('wakeWarn').style.display='block';
+    } else {
+      badge.textContent='💻 電腦模式'; badge.className='mode-badge desktop';
+    }
+  }
+}
+
+// ── TIME PICKER ──
+const tp = document.getElementById('timePicker');
+[['hour',24,'20'],['min',60,'00'],['sec',60,'00']].forEach(([id,max,def],i) => {
+  if (i>0) { const c=document.createElement('span'); c.className='colon'; c.textContent=':'; tp.appendChild(c); }
+  const s=document.createElement('select'); s.id=id;
+  s.addEventListener('change', updatePreview);
+  for (let n=0;n<max;n++) {
+    const o=document.createElement('option');
+    o.value=o.textContent=String(n).padStart(2,'0');
+    if(o.value===def) o.selected=true;
+    s.appendChild(o);
+  }
+  tp.appendChild(s);
+});
+
+// ── PREFILL PARSER ──
+let parsedBase='', parsedMap={};
+
+function parsePrefill() {
+  const raw=document.getElementById('prefillRaw').value.trim();
+  const box=document.getElementById('parseBox');
+  parsedBase=''; parsedMap={};
+  if (!raw) { box.classList.remove('show'); updatePreview(); return; }
+  if (!raw.includes('docs.google.com/forms')) {
+    box.classList.add('show');
+    box.innerHTML='<span class="warn">⚠️ 請貼上 Google 表單的預填連結</span>';
+    updatePreview(); return;
+  }
+  try {
+    const u=new URL(raw);
+    parsedBase=u.origin+u.pathname.replace(/\/(edit|viewform|formResponse).*$/,'')+'/viewform';
+    const entries=[];
+    u.searchParams.forEach((val,key)=>{ if(key.startsWith('entry.')) entries.push({key,val}); });
+    if (entries.length===0) {
+      box.classList.add('show');
+      box.innerHTML='<span class="warn">⚠️ 找不到 entry 欄位，請確認是預填連結</span>';
+      updatePreview(); return;
+    }
+    entries.forEach(({key,val},idx)=>{
+      const v=val.toLowerCase();
+      if(/@/.test(v)) parsedMap[key]='email';
+      else if(/^09\d/.test(val)||/^\d{8,}$/.test(val)) parsedMap[key]='phone';
+      else if(idx===0) parsedMap[key]='name';
+      else if(/[a-z\u4e00-\u9fff]/.test(v)) parsedMap[key]='name';
+    });
+    const lbl={name:'姓名',phone:'電話',email:'信箱',nick:'暱稱'};
+    box.classList.add('show');
+    box.innerHTML=`<span class="ok">✅ 偵測到 ${entries.length} 個欄位</span><br>`+
+      entries.map(({key})=>{
+        const t=parsedMap[key];
+        return `<span class="hi">${key}</span> <span class="dim">→</span> `+(t?`<span class="ok">${lbl[t]}</span>`:`<span class="dim">未識別</span>`);
+      }).join('<br>');
+  } catch(e) {
+    box.classList.add('show');
+    box.innerHTML='<span class="warn">⚠️ 網址格式錯誤</span>';
+  }
+  updatePreview();
+}
+
+function getProfile() {
+  return {
+    name:  document.getElementById('name').value.trim(),
+    nick:  document.getElementById('nick').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    email: document.getElementById('email').value.trim()
+  };
+}
+
+function buildUrl() {
+  const directUrl = document.getElementById('url').value.trim();
+  const base = parsedBase || (directUrl ? directUrl.replace(/\/(edit|viewform|formResponse).*$/,'')+'/viewform' : null);
+  if (!base) return null;
+  const profile=getProfile();
+  const params=new URLSearchParams();
+  Object.entries(parsedMap).forEach(([key,type])=>{ if(profile[type]) params.append(key,profile[type]); });
+  const qs=params.toString();
+  return qs ? `${base}?${qs}&usp=pp_url` : base;
+}
+
+function updatePreview() {
+  const url=buildUrl();
+  const preview=document.getElementById('prefillPreview');
+  if (!url) { preview.classList.remove('show'); return; }
+  preview.classList.add('show');
+  const short=url.length>80?url.slice(0,80)+'…':url;
+  preview.innerHTML=`<span style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;">預填網址預覽</span><span style="color:var(--blue)">${short}</span>`;
+}
+
+// ── WAKE LOCK（防止手機螢幕熄滅）──
+let wakeLock=null;
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) { try { wakeLock=await navigator.wakeLock.request('screen'); } catch(e){} }
+}
+function releaseWakeLock() { if(wakeLock){wakeLock.release();wakeLock=null;} }
+
+// ── SNIPER ──
+let cdTimer=null;
+
+async function doStart() {
+  const directUrl=document.getElementById('url').value.trim();
+  const raw=document.getElementById('prefillRaw').value.trim();
+  if (!directUrl && !raw) { alert('請輸入表單網址或預填連結'); return; }
+
+  const h=document.getElementById('hour').value;
+  const m=document.getElementById('min').value;
+  const s=document.getElementById('sec').value;
+  const target=`${h}:${m}:${s}`;
+  const url=buildUrl()||directUrl;
+
+  if (isMobile) await requestWakeLock();
+
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('cancelBtn').classList.add('show');
+  document.getElementById('countdown').classList.add('show');
+  document.getElementById('cdSub').textContent=`目標時間 ${target}`;
+  setStatus('waiting',`等待中，目標 ${target}`);
+  sessionStorage.setItem('sniper_url',url);
+  sessionStorage.setItem('sniper_target',target);
+  startCD(target,url);
+}
+
+function startCD(target,url) {
+  clearInterval(cdTimer);
+  cdTimer=setInterval(()=>{
+    const now=new Date();
+    const[th,tm,ts]=target.split(':').map(Number);
+    const t2=new Date(now); t2.setHours(th,tm,ts,0);
+    if(t2<=now) t2.setDate(t2.getDate()+1);
+    const diff=t2-now;
+    const hh=Math.floor(diff/3600000);
+    const mm=Math.floor((diff%3600000)/60000);
+    const ss=Math.floor((diff%60000)/1000);
+    const el=document.getElementById('cdTime');
+    el.textContent=`${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+    el.className='cd-time'+(diff<10000?' urgent':'');
+    const nowStr=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    if(nowStr>=target){clearInterval(cdTimer);launch(url);}
+  },150);
+}
+
+function launch(url) {
+  setStatus('done','✅ 時間到！跳轉表單中...');
+  document.getElementById('cdTime').textContent='00:00:00';
+  releaseWakeLock();
+  setTimeout(()=>{ window.location.href=url; },250);
+}
+
+function doCancel() {
+  clearInterval(cdTimer); releaseWakeLock();
+  sessionStorage.removeItem('sniper_url'); sessionStorage.removeItem('sniper_target');
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('cancelBtn').classList.remove('show');
+  document.getElementById('countdown').classList.remove('show');
+  document.getElementById('statusBox').classList.remove('show');
+  document.getElementById('cdTime').textContent='--:--:--';
+}
+
+function setStatus(state,msg) {
+  const box=document.getElementById('statusBox');
+  box.className='show '+state;
+  document.getElementById('statusText').textContent=msg;
+}
+
+function pad(n){return String(n).padStart(2,'0');}
+
+// ── INIT ──
+window.addEventListener('load',()=>{
+  document.getElementById('li-phone').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+  const raw=sessionStorage.getItem('user');
+  if(!raw) return;
+  applyUser(JSON.parse(raw));
+  showPage('mainPage');
+  const sUrl=sessionStorage.getItem('sniper_url');
+  const sTarget=sessionStorage.getItem('sniper_target');
+  if(sUrl&&sTarget){
+    const now=new Date();
+    const nowStr=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    if(nowStr<sTarget){
+      document.getElementById('startBtn').disabled=true;
+      document.getElementById('cancelBtn').classList.add('show');
+      document.getElementById('countdown').classList.add('show');
+      document.getElementById('cdSub').textContent=`目標時間 ${sTarget}`;
+      setStatus('waiting',`等待中，目標 ${sTarget}`);
+      if(isMobile) requestWakeLock();
+      startCD(sTarget,sUrl);
+    } else {
+      sessionStorage.removeItem('sniper_url');
+      sessionStorage.removeItem('sniper_target');
+    }
+  }
+});
+
+// 切換回 App 時重新申請 wake lock
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'&&cdTimer&&isMobile) await requestWakeLock();
+});
+</script>
+</body>
+</html>
