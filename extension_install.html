@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安裝搶票助手</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #090909;
+      color: #f3f3f3;
+      font-family: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.7;
+    }
+    main {
+      width: min(760px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 56px 0 80px;
+    }
+    h1 { margin: 0 0 10px; font-size: 34px; line-height: 1.15; }
+    h2 { margin: 34px 0 10px; font-size: 19px; }
+    p, li { color: #c8c8c8; }
+    a { color: #ff5757; font-weight: 700; }
+    code, pre {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      color: #fff;
+    }
+    code { padding: 2px 6px; }
+    pre { padding: 14px; overflow: auto; }
+    .note {
+      margin: 22px 0;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 87, 87, .35);
+      border-radius: 8px;
+      background: rgba(255, 87, 87, .08);
+    }
+    .steps { padding-left: 22px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>安裝搶票助手</h1>
+    <p>GitHub Pages 只負責提供控制頁。要讓網頁能在指定時間開啟 Google Forms 並填入資料，Chrome 仍需要安裝這個擴充套件。</p>
+
+    <div class="note">
+      請只在你有權操作、且符合活動或平台規則的表單上使用。這個工具不會處理驗證碼、登入限制、付款流程或繞過平台保護。
+    </div>
+
+    <h2>1. 下載或取得擴充套件檔案</h2>
+    <p>擴充套件資料夾至少需要包含：</p>
+    <pre>manifest.json
+background.js</pre>
+
+    <h2>2. 在 Chrome 載入擴充套件</h2>
+    <ol class="steps">
+      <li>開啟 <code>chrome://extensions</code>。</li>
+      <li>右上角打開「開發人員模式」。</li>
+      <li>按「載入未封裝項目」。</li>
+      <li>選擇包含 <code>manifest.json</code> 和 <code>background.js</code> 的資料夾。</li>
+    </ol>
+
+    <h2>3. 複製擴充 ID</h2>
+    <p>載入成功後，Chrome 會顯示一組 32 碼 ID，例如：</p>
+    <pre>abcdefghijklmnopabcdefghijklmnop</pre>
+
+    <h2>4. 回到控制頁</h2>
+    <p>回到 <a href="./index.html">搶票控制頁</a>，把擴充 ID 貼進頁面上方的輸入框並儲存。也可以把 ID 放在網址參數：</p>
+    <pre>https://你的帳號.github.io/你的repo/?ext=abcdefghijklmnopabcdefghijklmnop</pre>
+
+    <h2>5. 開始使用</h2>
+    <ol class="steps">
+      <li>輸入 Google Forms 網址。</li>
+      <li>設定啟動時間。</li>
+      <li>填好姓名、電話、Email 等資料。</li>
+      <li>按開始，保持 Chrome 開啟。</li>
+    </ol>
+  </main>
+</body>
+</html>
