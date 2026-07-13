@@ -328,7 +328,7 @@ function fillForm(profile) {
         let value = '';
         if (/email|e-mail|信箱|電子郵件/.test(title)) value = profile.email;
         else if (/nickname|暱稱|id\b|帳號/.test(title)) value = profile.nick;
-        else if (/name|姓名|名字|署名|簽名|本名|真名|稱呼/.test(title)) value = profile.name;
+        else if (/name|姓名|名稱|名字|署名|簽名|本名|真名|稱呼/.test(title)) value = profile.name;
         else if (/phone|mobile|電話|手機/.test(title)) value = profile.phone;
 
         setVal(input, value);
